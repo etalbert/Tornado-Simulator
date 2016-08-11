@@ -25,6 +25,7 @@ import time
 import tables as tb
 
 # Global constants
+# TODO: a single file from which all the R/Z/THETA info is pulled
 PI = np.pi #Mathematical constant pi
 DELTA_R = 20 #Change in radius across a parcel; in meters
 DELTA_Z = 20 #Change in altitude across a parcel; in meters
@@ -280,9 +281,11 @@ initialization_file = tb.open_file("initialization_data.h5", mode="r", title="In
 init_value_table = initialization_file.root.parcel_data.readout
 init_values = np.ndarray(shape=(NUM_R, NUM_Z), dtype=(float,7))
 for row in init_value_table.iterrows():
-    init_values[row['r'], row['z']] = (row['rVel'], row['zVel'], row['thetaVel'],
-                                       row['pressure'], row['temperature'],
-                                       row['density'], row['viscocity'])
+    radius = int(row['r']/DELTA_R)
+    height = int(row['z']/DELTA_Z)
+    init_values[radius, height] = (row['rVel'], row['zVel'], row['thetaVel'],
+                                   row['pressure'], row['temperature'],
+                                   row['density'], row['viscocity'])
 
 for index, parcel in np.ndenumerate(parcelList):
     rVel, zVel, thetaVel, pressure, temperature, density, viscocity = init_values[parcel.r/DELTA_R, parcel.z/DELTA_Z]
@@ -347,18 +350,6 @@ for index, parcel in np.ndenumerate(parcelList):
     parcel_table_row['thetaVel'] = parcel.thetaVel
     parcel_table_row.append()
 table.flush()
-
-#Plotting
-#for t in range(NUM_T):
-#    plt.pcolor(absoluteVelocity[:,:,0,t])
-#    plt.draw()
-#    time.sleep(DELTA_T)
-
-#plotting the change in absolute velocity for a single parcel
-# timeList = [i*DELTA_T for i in range(NUM_T)]
-# veloList = [i for i in absoluteVelocity[0,0,0,:]]
-# plt.plot(timeList, veloList)
-# plt.draw()
 
 initialization_file.close()
 simulation_file.close()

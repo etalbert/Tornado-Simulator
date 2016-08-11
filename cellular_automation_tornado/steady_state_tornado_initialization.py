@@ -169,7 +169,7 @@ for r in drange(0, NUM_R, 1):
         parcel_table_row['thetaVel'] = velocity[r][z]
         parcel_table_row['pressure'] = pressure[r][z]
         parcel_table_row['temperature'] = temperature[r][z]
-        parcel_table_row['density'] = density[r][z]
+        parcel_table_row['density'] = 1 #density[r][z]
         parcel_table_row['viscocity'] = 1.85*(10**-5)
 table.flush()
 
