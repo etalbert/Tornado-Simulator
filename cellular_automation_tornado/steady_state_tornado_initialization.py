@@ -17,8 +17,8 @@ IDEAL_GAS_CONST = 8314.4598 #gas costant R; in meters^3 * pascals / kelvin * kil
 MW_AIR = 29 #molecular weight of air; in kilograms / kilogram-moles
 STP_PRESSURE = 101325 #standard atmospheric pressure; in pascals
 
-DELTA_R = 10 # Change in radius across a parcel; in meters
-DELTA_Z = 10 # Change in altitude across a parcel; in meters
+DELTA_R = 20 # Change in radius across a parcel; in meters
+DELTA_Z = 20 # Change in altitude across a parcel; in meters
 MAX_R = 1000 # Maximum radius in this model; in meters
 MAX_Z = 1000 # Maximum altitude in this model; in meters
 NUM_R = int(MAX_R/DELTA_R) #Number of parcels in the radius direction
@@ -151,9 +151,9 @@ class TableData(tb.IsDescription):
     density = tb.Float32Col()
     viscocity = tb.Float32Col()
 
-hdf_file = tb.open_file("initialization_data.h5", mode="w", title="Steady-State Tornado Initialization Data")
-group = hdf_file.create_group("/", "parcel_data")
-table = hdf_file.create_table(group, 'readout', TableData, "Parcel Data Table")
+initialization_file = tb.open_file("initialization_data.h5", mode="w", title="Initialization Data")
+group = initialization_file.create_group("/", "parcel_data")
+table = initialization_file.create_table(group, 'readout', TableData, "Parcel Data Table")
 parcel_table_row = table.row
 
 for r in drange(0, NUM_R, 1):
@@ -242,3 +242,5 @@ table.flush()
 # ax.set_title('Partial Derivative of Pressure in respect to Height in and around a tornado as a function of radius and height')
 #
 # plt.show()
+
+initialization_file.close()

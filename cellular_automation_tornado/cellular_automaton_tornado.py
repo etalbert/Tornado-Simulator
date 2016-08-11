@@ -275,15 +275,17 @@ tempList = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA), dtype=object)
 initParcelList(parcelList)
 initParcelList(tempList)
 
+# get initial values from steady-state model
+initialization_file = tb.open_file("initialization_data.h5", mode="r", title="Initialization Data")
+init_value_table = initialization_file.root.parcel_data.readout
+init_values = np.ndarray(shape=(NUM_R, NUM_Z), dtype=(float,7))
+for row in init_value_table.iterrows():
+    init_values[row['r'], row['z']] = (row['rVel'], row['zVel'], row['thetaVel'],
+                                       row['pressure'], row['temperature'],
+                                       row['density'], row['viscocity'])
+
 for index, parcel in np.ndenumerate(parcelList):
-    #TODO: Better initializations
-    rVel = np.random.randint(-10, 10)
-    zVel = np.random.randint(-10, 10)
-    thetaVel = np.random.randint(-10, 10)
-    pressure = 10000
-    temperature = 300
-    density = .0001
-    viscocity = 1.85*(10**-5)
+    rVel, zVel, thetaVel, pressure, temperature, density, viscocity = init_values[parcel.r/DELTA_R, parcel.z/DELTA_Z]
 
     parcelList[index].rVel = rVel
     parcelList[index].zVel = zVel
@@ -308,9 +310,9 @@ class TableData(tb.IsDescription):
     zVel = tb.Float32Col()
     thetaVel = tb.Float32Col()
 
-hdf_file = tb.open_file("simulation_data.h5", mode="w", title="Tornado Simulation Data")
-group = hdf_file.create_group("/", "parcel_data")
-table = hdf_file.create_table(group, 'readout', TableData, "Parcel Data Table")
+simulation_file = tb.open_file("simulation_data.h5", mode="w", title="Tornado Simulation Data")
+group = simulation_file.create_group("/", "parcel_data")
+table = simulation_file.create_table(group, 'readout', TableData, "Parcel Data Table")
 parcel_table_row = table.row
 
 step = 0
@@ -357,3 +359,6 @@ table.flush()
 # veloList = [i for i in absoluteVelocity[0,0,0,:]]
 # plt.plot(timeList, veloList)
 # plt.draw()
+
+initialization_file.close()
+simulation_file.close()
