@@ -25,6 +25,7 @@ import time
 import tables as tb
 
 # Global constants
+# TODO: a single file from which all the R/Z/THETA info is pulled
 PI = np.pi #Mathematical constant pi
 DELTA_R = 20 #Change in radius across a parcel; in meters
 DELTA_Z = 20 #Change in altitude across a parcel; in meters
