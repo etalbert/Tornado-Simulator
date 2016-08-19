@@ -52,18 +52,18 @@ def drange(start, stop, step):
 #   Density, kilograms / meters^3
 #   Pressure, pascals
 lattice = np.zeros((NUM_R, NUM_Z),
-                   dtype = [('velocity', 'i4'),
-                            ('temperature', 'i4'),
-                            ('density', 'i4'),
-                            ('pressure', 'i4'),
-                            ('dvdr', 'i4'),
-                            ('dtdr', 'i4'),
-                            ('drhodr', 'i4'),
-                            ('dpdr', 'i4'),
-                            ('dvdz', 'i4'),
-                            ('dtdz', 'i4'),
-                            ('drhodz', 'i4'),
-                            ('dpdz', 'i4')])
+                   dtype = [('velocity', 'f4'),
+                            ('temperature', 'f4'),
+                            ('density', 'f4'),
+                            ('pressure', 'f4'),
+                            ('dvdr', 'f4'),
+                            ('dtdr', 'f4'),
+                            ('drhodr', 'f4'),
+                            ('dpdr', 'f4'),
+                            ('dvdz', 'f4'),
+                            ('dtdz', 'f4'),
+                            ('drhodz', 'f4'),
+                            ('dpdz', 'f4')])
 
 #These arrays point to the same memory locations as lattice does, so using them
 #is essentially just a nicer-looking way of accessing lattice
@@ -150,6 +150,8 @@ class TableData(tb.IsDescription):
     temperature = tb.Float32Col()
     density = tb.Float32Col()
     viscocity = tb.Float32Col()
+    rIndex = tb.Int32Col()
+    zIndex = tb.Int32Col()
 
 initialization_file = tb.open_file("initialization_data.h5", mode="w", title="Initialization Data")
 group = initialization_file.create_group("/", "parcel_data")
@@ -169,8 +171,11 @@ for r in drange(0, NUM_R, 1):
         parcel_table_row['thetaVel'] = velocity[r][z]
         parcel_table_row['pressure'] = pressure[r][z]
         parcel_table_row['temperature'] = temperature[r][z]
-        parcel_table_row['density'] = 1 #density[r][z]
+        parcel_table_row['density'] = density[r][z]
         parcel_table_row['viscocity'] = 1.85*(10**-5)
+        parcel_table_row['rIndex'] = r
+        parcel_table_row['zIndex'] = z
+        parcel_table_row.append()
 table.flush()
 
 # #Plotting

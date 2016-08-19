@@ -25,13 +25,14 @@ simulation_file = tb.open_file("simulation_data.h5", mode="r", title="Tornado Si
 table = simulation_file.root.parcel_data.readout
 
 
-absolute_velocity = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA, NUM_T))
+absolute_velocity = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA, NUM_T+1))
 for row in table.iterrows():
-    radius = int(row['r']/DELTA_R)
-    height = int(row['z']/DELTA_Z)
-    theta = int(row['theta']/DELTA_THETA)
+    radius = row['rIndex']
+    height = row['zIndex']
+    theta = row['thetaIndex']
+    time_index = row['tIndex'] # time is already in the namespace, thus the different name style
     # TODO: the velocity values don't exist for a lot of these. Find Out Why
-    absolute_velocity[radius, height, theta] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
+    absolute_velocity[radius, height, theta, time_index] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
 
 #Plotting
 # plt.show()
@@ -41,7 +42,7 @@ for row in table.iterrows():
 #    time.sleep(DELTA_T)
 
 #plotting the change in absolute velocity for a single parcel
-timeList = [i*DELTA_T for i in range(NUM_T)]
+timeList = [i*DELTA_T for i in range(NUM_T+1)]
 veloList = [i for i in absolute_velocity[0,0,0,:]]
 print(timeList)
 print(veloList)
