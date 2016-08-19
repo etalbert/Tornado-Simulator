@@ -25,34 +25,12 @@ simulation_file = tb.open_file("simulation_data.h5", mode="r", title="Tornado Si
 table = simulation_file.root.parcel_data.readout
 
 
-absolute_velocity = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA, NUM_T))
-radius = height = theta = time_index = -1 # time is already in the namespace, so using time_index
-last_r = last_z = last_theta = last_t = -1
+absolute_velocity = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA, NUM_T+1))
 for row in table.iterrows():
-    # this is a sort of hacked together method of moving from r/z/theta/t values
-    #   to indices.  It seems to work but it's far from glamorous.
-    if last_r != row['r']:
-        last_r = row['r']
-        radius += 1
-        if radius >= NUM_R:
-            radius = 0
-    if last_z != row['z']:
-        last_z = row['z']
-        height += 1
-        if height >= NUM_Z:
-            height = 0
-    if last_theta != row['theta']:
-        last_theta = row['theta']
-        theta += 1
-        if theta >= NUM_THETA:
-            theta = 0
-    if last_t != row['t']:
-        last_t = row['t']
-        time_index += 1
-        if time_index >= NUM_T:
-            time_index = 0
-
-    print(row['rVel']) #DEBUG
+    radius = row['rIndex']
+    height = row['zIndex']
+    theta = row['thetaIndex']
+    time_index = row['tIndex'] # time is already in the namespace, thus the different name style
     # TODO: the velocity values don't exist for a lot of these. Find Out Why
     absolute_velocity[radius, height, theta, time_index] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
 
@@ -64,7 +42,7 @@ for row in table.iterrows():
 #    time.sleep(DELTA_T)
 
 #plotting the change in absolute velocity for a single parcel
-timeList = [i*DELTA_T for i in range(NUM_T)]
+timeList = [i*DELTA_T for i in range(NUM_T+1)]
 veloList = [i for i in absolute_velocity[0,0,0,:]]
 print(timeList)
 print(veloList)

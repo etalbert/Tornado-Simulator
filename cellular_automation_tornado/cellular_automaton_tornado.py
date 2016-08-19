@@ -94,6 +94,14 @@ class Parcel:
         self.left = None
         self. right = None
 
+    def setIndices(self, rIndex, zIndex, thetaIndex):
+        """Set Indices: tell this parcel the indices to access it in the array
+        in which it is contained.
+        """
+        self.rIndex = rIndex
+        self.zIndex = zIndex
+        self.thetaIndex = thetaIndex
+
     def setNeighbors(self, top = None, bottom = None, inner = None,
                      outer = None, left = None, right = None):
         """Set Neighbors: tell this parcel who its neighbors are
@@ -221,7 +229,7 @@ class Parcel:
         return np.sqrt(self.rVel**2 + self.zVel**2 + self.thetaVel**2)
 
 def initParcelList(parcelList):
-    # set coordinates
+    # set coordinates and indices
     for index, parcel in np.ndenumerate(parcelList):
         a = index[0]
         b = index[1]
@@ -232,6 +240,7 @@ def initParcelList(parcelList):
         theta = c*DELTA_THETA+DELTA_THETA/2
 
         parcelList[index] = Parcel(r, z, theta)
+        parcelList[index].setIndices(a, b, c)
 
     # set neighbors
     for index, parcel in np.ndenumerate(parcelList):
@@ -278,25 +287,31 @@ initParcelList(tempList)
 
 # get initial values from steady-state model
 initialization_file = tb.open_file("initialization_data.h5", mode="r", title="Initialization Data")
-init_value_table = initialization_file.root.parcel_data.readout
-init_values = np.ndarray(shape=(NUM_R, NUM_Z), dtype=(float,7))
-for row in init_value_table.iterrows():
-    radius = int(row['r']/DELTA_R)
-    height = int(row['z']/DELTA_Z)
-    init_values[radius, height] = (row['rVel'], row['zVel'], row['thetaVel'],
-                                   row['pressure'], row['temperature'],
-                                   row['density'], row['viscocity'])
+init_table = initialization_file.root.parcel_data.readout
+init_values = np.ndarray(shape=(NUM_R, NUM_Z, 7), dtype=float)
+for row in init_table.iterrows():
+    radius = row['rIndex']
+    height = row['zIndex']
+
+    init_values[radius, height, 0] = row['rVel']
+    init_values[radius, height, 1] = row['zVel']
+    init_values[radius, height, 2] = row['thetaVel']
+    init_values[radius, height, 3] = row['pressure']
+    init_values[radius, height, 4] = row['temperature']
+    init_values[radius, height, 5] = row['density']
+    init_values[radius, height, 6] = row['viscocity']
 
 for index, parcel in np.ndenumerate(parcelList):
-    rVel, zVel, thetaVel, pressure, temperature, density, viscocity = init_values[parcel.r/DELTA_R, parcel.z/DELTA_Z]
+    radius_index = parcel.rIndex
+    height_index = parcel.zIndex
 
-    parcelList[index].rVel = rVel
-    parcelList[index].zVel = zVel
-    parcelList[index].thetaVel = thetaVel
-    parcelList[index].pressure = pressure
-    parcelList[index].temperature = temperature
-    parcelList[index].density = density
-    parcelList[index].viscocity = viscocity
+    parcelList[index].rVel = init_values[radius_index, height_index, 0]
+    parcelList[index].zVel = init_values[radius_index, height_index, 1]
+    parcelList[index].thetaVel = init_values[radius_index, height_index, 2]
+    parcelList[index].pressure = init_values[radius_index, height_index, 3]
+    parcelList[index].temperature = init_values[radius_index, height_index, 4]
+    parcelList[index].density = init_values[radius_index, height_index, 5]
+    parcelList[index].viscocity = init_values[radius_index, height_index, 6]
 
 # creating the table in which to store all the simulation data
 class TableData(tb.IsDescription):
@@ -312,6 +327,10 @@ class TableData(tb.IsDescription):
     rVel = tb.Float32Col()
     zVel = tb.Float32Col()
     thetaVel = tb.Float32Col()
+    rIndex = tb.Int32Col()
+    zIndex = tb.Int32Col()
+    thetaIndex = tb.Int32Col()
+    tIndex = tb.Int32Col()
 
 simulation_file = tb.open_file("simulation_data.h5", mode="w", title="Tornado Simulation Data")
 group = simulation_file.create_group("/", "parcel_data")
@@ -329,6 +348,10 @@ while step < NUM_T:
         parcel_table_row['rVel'] = parcel.rVel
         parcel_table_row['zVel'] = parcel.zVel
         parcel_table_row['thetaVel'] = parcel.thetaVel
+        parcel_table_row['rIndex'] = parcel.rIndex
+        parcel_table_row['zIndex'] = parcel.zIndex
+        parcel_table_row['thetaIndex'] = parcel.thetaIndex
+        parcel_table_row['tIndex'] = step
         parcel_table_row.append()
 
         parcel.update(tempList[index])
@@ -348,6 +371,10 @@ for index, parcel in np.ndenumerate(parcelList):
     parcel_table_row['rVel'] = parcel.rVel
     parcel_table_row['zVel'] = parcel.zVel
     parcel_table_row['thetaVel'] = parcel.thetaVel
+    parcel_table_row['rIndex'] = parcel.rIndex
+    parcel_table_row['zIndex'] = parcel.zIndex
+    parcel_table_row['thetaIndex'] = parcel.thetaIndex
+    parcel_table_row['tIndex'] = step
     parcel_table_row.append()
 table.flush()
 
