@@ -26,12 +26,35 @@ table = simulation_file.root.parcel_data.readout
 
 
 absolute_velocity = np.ndarray(shape=(NUM_R, NUM_Z, NUM_THETA, NUM_T))
+radius = height = theta = time_index = -1 # time is already in the namespace, so using time_index
+last_r = last_z = last_theta = last_t = -1
 for row in table.iterrows():
-    radius = int(row['r']/DELTA_R)
-    height = int(row['z']/DELTA_Z)
-    theta = int(row['theta']/DELTA_THETA)
+    # this is a sort of hacked together method of moving from r/z/theta/t values
+    #   to indices.  It seems to work but it's far from glamorous.
+    if last_r != row['r']:
+        last_r = row['r']
+        radius += 1
+        if radius >= NUM_R:
+            radius = 0
+    if last_z != row['z']:
+        last_z = row['z']
+        height += 1
+        if height >= NUM_Z:
+            height = 0
+    if last_theta != row['theta']:
+        last_theta = row['theta']
+        theta += 1
+        if theta >= NUM_THETA:
+            theta = 0
+    if last_t != row['t']:
+        last_t = row['t']
+        time_index += 1
+        if time_index >= NUM_T:
+            time_index = 0
+
+    print(row['rVel']) #DEBUG
     # TODO: the velocity values don't exist for a lot of these. Find Out Why
-    absolute_velocity[radius, height, theta] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
+    absolute_velocity[radius, height, theta, time_index] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
 
 #Plotting
 # plt.show()
