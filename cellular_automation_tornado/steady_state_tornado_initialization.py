@@ -10,6 +10,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage.filters import gaussian_filter
 
 #constants, boundary condition variables and arrays
 G_CONST = -9.81 # Acceleration of Earth's gravity; in meters / second^2,
@@ -80,6 +81,7 @@ dtdz = lattice['dtdz'] # dT/dz
 drhodz = lattice['drhodz'] # d(rho)/dz
 dpdz = lattice['dpdz'] # dP/dz
 
+# Initialize
 for r in drange(0, NUM_R, 1):
     for z in drange(0, NUM_Z, 1):
         #r and z are indices, radius and height the actual values
@@ -102,16 +104,25 @@ for r in drange(0, NUM_R, 1):
         #value for pressure, and work from there
         density[r][z] = 1.15
 
+velocity = gaussian_filter(velocity, sigma=1)
+temperature = gaussian_filter(temperature, sigma=1)
+
+# Iterate, to converge towards better numbers
+for r in drange(0, NUM_R, 1):
+    for z in drange(0, NUM_Z, 1):
+        #r and z are indices, radius and height the actual values
+        radius = r*DELTA_R
+        height = z*DELTA_Z
+
         #Iteratively change pressure, density, and temperature
         for i in drange(0, 75, 1):#If this takes too long, decrease the middle number
             #Change pressure
             if radius <= tornado_radius(height):
                 pressure[r][z] =\
-                    .5*density[r][z]*radius*(ANGULAR_VEL**2) +\
+                    .5*density[r][z]*radius**2*(ANGULAR_VEL**2) +\
                     density[r][z]*G_CONST*height +\
                     STP_PRESSURE -\
-                    .5*density[r][z]*(tornado_radius(height)**2)*(ANGULAR_VEL**2) -\
-                    .5*density[r][z]*tornado_radius(height)*(ANGULAR_VEL**2)
+                    density[r][z]*(tornado_radius(height)**2)*(ANGULAR_VEL**2)
 
             else:
                 pressure[r][z] =\
@@ -178,74 +189,74 @@ for r in drange(0, NUM_R, 1):
         parcel_table_row.append()
 table.flush()
 
-# #Plotting
-# #I can probably write a function to do all this instead of repeating code like
-# #I am, but sometimes Ctrl+C/Ctrl+V is a lot easier than actually thinking.
-# #Plus this way, if changes need to be made to a single chart, it's much easier.
-# R = np.arange(0, MAX_R, DELTA_R)
-# Z = np.arange(0, MAX_Z, DELTA_Z)
-# R, Z = np.meshgrid(R, Z)
-#
-# #plot pressure
-# fig = plt.figure(1)
-# ax = Axes3D(fig)#fig.gca(projection='3d') is what I had before, and it didn't work
-# surf = ax.plot_surface(Z, R, pressure, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(0, 175000)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Pressure in and around a tornado as a function of radius and height')
-#
-# #plot velocity
-# fig = plt.figure(2)
-# ax = Axes3D(fig)
-# surf = ax.plot_surface(Z, R, velocity, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(0, 500)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Rotational velocity in and around a tornado as a function of radius and height')
-#
-# #plot temperature
-# fig = plt.figure(3)
-# ax = Axes3D(fig)
-# surf = ax.plot_surface(Z, R, temperature, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(-100, 100)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Temperature in and around a tornado as a function of radius and height')
-#
-# #plot density
-# fig = plt.figure(4)
-# ax = Axes3D(fig)
-# surf = ax.plot_surface(Z, R, density, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(0, 2)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Density in and around a tornado as a function of radius and height')
-#
-# #plot partial of pressure in respect to radius
-# fig = plt.figure(5)
-# ax = Axes3D(fig)
-# surf = ax.plot_surface(Z, R, dpdr, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(-500, 500)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Partial Derivative of Pressure in respect to Radius in and around a tornado as a function of radius and height')
-#
-# #plot partial of pressure in respect to height
-# fig = plt.figure(6)
-# ax = Axes3D(fig)
-# surf = ax.plot_surface(Z, R, dpdz, rstride=1, cstride=1,
-#         cmap=cm.coolwarm, linewidth=0, antialiased=False)
-# ax.set_zlim(-500, 500)
-# ax.set_xlabel('Radius')
-# ax.set_ylabel('Height')
-# ax.set_title('Partial Derivative of Pressure in respect to Height in and around a tornado as a function of radius and height')
-#
-# plt.show()
+#Plotting
+#I can probably write a function to do all this instead of repeating code like
+#I am, but sometimes Ctrl+C/Ctrl+V is a lot easier than actually thinking.
+#Plus this way, if changes need to be made to a single chart, it's much easier.
+R = np.arange(0, MAX_R, DELTA_R)
+Z = np.arange(0, MAX_Z, DELTA_Z)
+R, Z = np.meshgrid(R, Z)
+
+#plot pressure
+fig = plt.figure(1)
+ax = Axes3D(fig)#fig.gca(projection='3d') is what I had before, and it didn't work
+surf = ax.plot_surface(Z, R, pressure, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 175000)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Pressure in and around a tornado as a function of radius and height')
+
+#plot velocity
+fig = plt.figure(2)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, velocity, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 500)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Rotational velocity in and around a tornado as a function of radius and height')
+
+#plot temperature
+fig = plt.figure(3)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, temperature, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(-100, 100)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Temperature in and around a tornado as a function of radius and height')
+
+#plot density
+fig = plt.figure(4)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, density, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 2)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Density in and around a tornado as a function of radius and height')
+
+#plot partial of pressure in respect to radius
+fig = plt.figure(5)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, dpdr, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(-500, 500)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Partial Derivative of Pressure in respect to Radius in and around a tornado as a function of radius and height')
+
+#plot partial of pressure in respect to height
+fig = plt.figure(6)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, dpdz, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(-500, 500)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('Partial Derivative of Pressure in respect to Height in and around a tornado as a function of radius and height')
+
+plt.show()
 
 initialization_file.close()
