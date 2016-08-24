@@ -92,7 +92,7 @@ class Parcel:
         self.inner = None
         self.outer = None
         self.left = None
-        self. right = None
+        self.right = None
 
     def setIndices(self, rIndex, zIndex, thetaIndex):
         """Set Indices: tell this parcel the indices to access it in the array

@@ -4,6 +4,8 @@ import numpy as np
 import tables as tb
 import math
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 import time
 
 PI = np.pi #Mathematical constant pi
@@ -31,7 +33,6 @@ for row in table.iterrows():
     height = row['zIndex']
     theta = row['thetaIndex']
     time_index = row['tIndex'] # time is already in the namespace, thus the different name style
-    # TODO: the velocity values don't exist for a lot of these. Find Out Why
     absolute_velocity[radius, height, theta, time_index] = math.sqrt(row['rVel']**2 + row['zVel']**2 + row['thetaVel']**2)
 
 #Plotting
@@ -42,11 +43,54 @@ for row in table.iterrows():
 #    time.sleep(DELTA_T)
 
 #plotting the change in absolute velocity for a single parcel
-timeList = [i*DELTA_T for i in range(NUM_T+1)]
-veloList = [i for i in absolute_velocity[0,0,0,:]]
-print(timeList)
-print(veloList)
-plt.plot(timeList, veloList)
+# timeList = [i*DELTA_T for i in range(NUM_T+1)]
+# veloList = [i for i in absolute_velocity[0,0,0,:]]
+# plt.plot(timeList, veloList)
+
+R = np.arange(0, MAX_R, DELTA_R)
+Z = np.arange(0, MAX_Z, DELTA_Z)
+R, Z = np.meshgrid(R, Z)
+
+fig = plt.figure(1)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, absolute_velocity[:,:,0,0], rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 10000)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('0s, Total Velocity in and around a tornado as a function of radius and height')
+
+fig = plt.figure(2)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, absolute_velocity[:,:,0,49], rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 10000)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('5s, Total Velocity in and around a tornado as a function of radius and height')
+
+fig = plt.figure(3)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, absolute_velocity[:,:,0,-1], rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(0, 10000)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('10s, Total Velocity in and around a tornado as a function of radius and height')
+
+sincos = absolute_velocity[:,:,0,0] - absolute_velocity[:,:,0,0]
+for r in range(NUM_R):
+    for z in range(NUM_Z):
+        sincos[r][z] = np.sin(r)+np.sin(z)
+fig = plt.figure(4)
+ax = Axes3D(fig)
+surf = ax.plot_surface(Z, R, sincos, rstride=1, cstride=1,
+        cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_zlim(-25, 25)
+ax.set_xlabel('Radius')
+ax.set_ylabel('Height')
+ax.set_title('waves')
+
 plt.show()
 
 simulation_file.close()
